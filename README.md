@@ -1,9 +1,14 @@
 # No AI Attribution Action
 
 Keeps AI attribution out of your git history by failing pull requests that
-contain it. Using AI tools is not what this action stops, it only checks that
-the tools aren't credited in the history, which is where the attribution ends
-up when a pull request is squash merged.
+contain it.
+
+Using AI tools is allowed, this action doesn't stop anyone from using them.
+The problem it solves is that the tools add trailers, footers and links to
+commit messages and pull request descriptions, and when a pull request is
+squash merged all of that ends up in the git history. Over time the history
+gets polluted with lines that say nothing about the change itself, so the
+action asks contributors to remove them before merging.
 
 ## Usage
 
@@ -33,7 +38,10 @@ jobs:
       - uses: bluefireteam/no-ai-attribution-action@v1
 ```
 
-When the check fails it lists the lines that have to be removed.
+When the check fails it adds an error annotation to the workflow run, so the
+message is shown in the check summary of the pull request without having to
+open the logs. The message says that using AI tools is fine and lists the lines
+that have to be removed.
 
 ## What is checked
 

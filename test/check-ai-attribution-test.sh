@@ -6,14 +6,14 @@ script="$(dirname "$0")/../check-ai-attribution.sh"
 failures=0
 
 expect_flagged() {
-  if printf '%s\n' "$1" | "$script" 2>/dev/null; then
+  if printf '%s\n' "$1" | "$script" >/dev/null 2>&1; then
     echo "Should have been flagged: $1"
     failures=$((failures + 1))
   fi
 }
 
 expect_allowed() {
-  if ! printf '%s\n' "$1" | "$script" 2>/dev/null; then
+  if ! printf '%s\n' "$1" | "$script" >/dev/null 2>&1; then
     echo "Should have been allowed: $1"
     failures=$((failures + 1))
   fi
@@ -34,6 +34,12 @@ expect_allowed 'Author: Jane Doe <jane@example.com>'
 expect_allowed 'This fixes a bug that Claude found in the collision code.'
 expect_allowed 'Generated with a script'
 expect_allowed ''
+
+annotation=$(printf '%s\n' 'Made with Cursor' | GITHUB_ACTIONS=true "$script" 2>/dev/null)
+if [[ "$annotation" != '::error title=AI attribution found::'*'Using AI tools is perfectly fine'*'%0A- Made with Cursor' ]]; then
+  echo "Should have emitted an error annotation, got: $annotation"
+  failures=$((failures + 1))
+fi
 
 if [ "$failures" -gt 0 ]; then
   exit 1

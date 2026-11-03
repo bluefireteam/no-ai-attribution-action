@@ -22,15 +22,23 @@ footer+="[[:space:]]+(with|by|using|in)[^[:alnum:]]*(${tools})"
 session_link='https://claude\.ai/code/session_[[:alnum:]]'
 
 if matches=$(grep -Ei -e "$trailer" -e "$footer" -e "$session_link"); then
-  cat >&2 <<'EOF'
-This pull request contains AI attribution. Using AI tools is perfectly fine,
+  # The prefix stops the runner from parsing the lines as workflow commands.
+  flagged=$(printf '%s\n' "$matches" | sed 's/^/- /')
+  message="This pull request contains AI attribution. Using AI tools is perfectly fine,
 we just don't want the attribution in the git history.
 
 Remove these lines from the commit messages, commit authors or PR description
 (for commits, amend or rebase them and force push):
 
-EOF
-  # The prefix stops the runner from parsing the lines as workflow commands.
-  printf '%s\n' "$matches" | sed 's/^/- /' >&2
+$flagged"
+
+  printf '%s\n' "$message" >&2
+
+  if [ "${GITHUB_ACTIONS:-}" = true ]; then
+    escaped=${message//'%'/'%25'}
+    escaped=${escaped//$'\r'/'%0D'}
+    escaped=${escaped//$'\n'/'%0A'}
+    echo "::error title=AI attribution found::$escaped"
+  fi
   exit 1
 fi
